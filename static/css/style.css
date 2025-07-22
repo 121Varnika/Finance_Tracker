@@ -1,0 +1,7 @@
+.flatpickr-calendar { background-color: #ffffff; border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); width: 320px; padding: 1rem; border: 1px solid #e2e8f0; font-family: sans-serif; }
+.flatpickr-current-month .flatpickr-monthDropdown-months { font-size: 1.125rem; font-weight: 600; color: #111827; }
+.flatpickr-weekday { color: #6b7280; font-weight: 500; font-size: 0.75rem; }
+.flatpickr-day { color: #374151; border-radius: 8px; font-weight: 500; border: none; }
+.flatpickr-day:hover { background-color: #f3f4f6; color: #111827; }
+.flatpickr-day.today { background-color: #111827; color: #ffffff; }
+.flatpickr-day.selected { background-color: #4f46e5; color: #ffffff; }

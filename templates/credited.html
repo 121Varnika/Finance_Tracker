@@ -1,0 +1,87 @@
+{% extends 'layout.html' %}
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="flex items-center gap-4 mb-6">
+        <div class="bg-green-500/20 p-3 rounded-full"><svg xmlns="http://www.w.org/2000/svg" class="h-6 w-6 text-green-400" viewBox="0 0 20 20" fill="currentColor"><path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.5 2.5 0 004 0V7.151c.22.071.412.164.567.267C13.863 8.248 14 9.12 14 10a4 4 0 11-8 0c0-.88.137-1.752.433-2.582zM10 12a2 2 0 100-4 2 2 0 000 4z" /><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm0 2a10 10 0 100-20 10 10 0 000 20z" clip-rule="evenodd" /></svg></div>
+        <div>
+            <h1 class="text-3xl font-bold text-white">Credited</h1>
+            <p class="text-gray-400">Add new income and view your history.</p>
+        </div>
+    </div>
+
+    <div class="bg-gray-800 p-6 rounded-xl shadow-md mb-8">
+        <h2 class="text-lg font-semibold mb-5 text-white">Add New Income</h2>
+        <form method="post" class="space-y-5">
+            <div>
+                <label for="datepicker" class="block text-xs font-medium text-gray-400">DATE</label>
+                <input type="text" id="datepicker" name="date" required class="mt-1 block w-full bg-gray-700 border-transparent rounded-lg shadow-sm text-white px-4 py-3 focus:ring-2 focus:ring-indigo-500">
+            </div>
+            <div>
+                <label for="description" class="block text-xs font-medium text-gray-400">DESCRIPTION</label>
+                <input type="text" id="description" name="description" placeholder="e.g., Monthly Salary" class="mt-1 block w-full bg-gray-700 border-transparent rounded-lg shadow-sm text-white px-4 py-3 focus:ring-2 focus:ring-indigo-500">
+            </div>
+            <div>
+                <label for="amount" class="block text-xs font-medium text-gray-400">AMOUNT (₹)</label>
+                <input type="number" step="0.01" id="amount" name="amount" required placeholder="e.g., 50000" class="mt-1 block w-full bg-gray-700 border-transparent rounded-lg shadow-sm text-white px-4 py-3 focus:ring-2 focus:ring-indigo-500">
+            </div>
+            <div>
+                <label for="payment_method" class="block text-xs font-medium text-gray-400">PAYMENT METHOD</label>
+                <select name="payment_method" id="payment_method" required class="mt-1 block w-full bg-gray-700 border-transparent rounded-lg shadow-sm text-white px-4 py-3 focus:ring-2 focus:ring-indigo-500">
+                    <option value="select">--Select--</option>
+                    <option value="UPI">UPI</option>
+                    <option value="Cash">Cash</option>
+                    <option value="Lent">Lent</option>
+                    <option value="Borrowed">Borrowed</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+            <div class="pt-2">
+                <button type="submit" class="w-full py-3 px-4 rounded-lg text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700">Add Income</button>
+            </div>
+        </form>
+    </div>
+    
+    <h2 class="text-xl font-semibold mb-4 text-white">Income History</h2>
+    <div class="bg-gray-800 rounded-xl shadow-md overflow-hidden">
+        {% if transactions %}
+            <table class="min-w-full">
+                <thead class="bg-gray-700">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Date</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Description</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Method</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-300 uppercase tracking-wider">Amount</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-300 uppercase tracking-wider">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-700">
+                    {% for transaction in transactions %}
+                    <tr class="hover:bg-gray-700/50">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">{{ transaction['transaction_date'] }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">{{ transaction['description'] }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400">{{ transaction['payment_method'] }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-green-400 text-right font-semibold">+ ₹{{ "%.2f"|format(transaction['amount']) }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-right">
+                            <form action="{{ url_for('delete_transaction', id=transaction.id) }}" method="post">
+                                <button type="submit" class="text-red-500 hover:text-red-400 font-semibold" onclick="return confirm('Are you sure you want to delete this entry?');">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p class="p-6 text-center text-gray-400">You haven't logged any income yet. Use the form above to add your first one!</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    flatpickr("#datepicker", {
+        dateFormat: "Y-m-d",
+        defaultDate: "today"
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,104 @@
+{% extends 'layout.html' %}
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <div class="flex items-center gap-4 mb-6">
+        <div class="bg-indigo-500/20 p-3 rounded-full"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-indigo-400"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /></svg></div>
+        <div><h1 class="text-3xl font-bold text-white">Dashboard Overview</h1><p class="text-gray-400">Your financial summary and expense breakdown.</p></div>
+    </div>
+
+    {% if notification %}
+    <div class="bg-yellow-900/50 border border-yellow-700 text-yellow-300 px-4 py-3 rounded-lg relative mb-6" role="alert">
+        <strong class="font-bold">Reminder: </strong><span class="block sm:inline">{{ notification }}</span>
+    </div>
+    {% endif %}
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="bg-gray-800 p-4 rounded-xl shadow-md"><p class="text-sm text-gray-400">Income (Month)</p><p class="text-2xl font-bold text-white">₹{{ "%.2f"|format(monthly_income) }}</p></div>
+                <div class="bg-gray-800 p-4 rounded-xl shadow-md"><p class="text-sm text-gray-400">Expenses (Month)</p><p class="text-2xl font-bold text-white">₹{{ "%.2f"|format(monthly_expense) }}</p></div>
+                <div class="bg-gray-800 p-4 rounded-xl shadow-md"><p class="text-sm text-gray-400">Expenses (Week)</p><p class="text-2xl font-bold text-white">₹{{ "%.2f"|format(weekly_expense) }}</p></div>
+                <div class="bg-gray-800 p-4 rounded-xl shadow-md"><p class="text-sm text-gray-400">Expenses (Today)</p><p class="text-2xl font-bold text-white">₹{{ "%.2f"|format(daily_expense) }}</p></div>
+            </div>
+            <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                <div class="bg-gray-800 p-6 rounded-xl shadow-md"><h2 class="text-xl font-semibold mb-4 text-white">Monthly Spending Comparison</h2><canvas id="lineChart"></canvas></div>
+                <div class="bg-gray-800 p-6 rounded-xl shadow-md"><h2 class="text-xl font-semibold mb-4 text-white">Monthly Expense Breakdown</h2>{% if doughnut_data %}<div class="max-w-md mx-auto"><canvas id="expenseChart"></canvas></div>{% else %}<p class="text-center text-gray-400 h-full flex items-center justify-center">No expenses logged for this month.</p>{% endif %}</div>
+            </div>
+        </div>
+        <div class="space-y-6">
+            <div class="bg-gray-800 p-6 rounded-xl shadow-md"><p class="text-sm text-gray-400">Available Balance</p><p id="balance-amount" class="text-3xl font-bold text-white">₹ ****</p><button id="show-balance-btn" class="text-sm text-indigo-400 hover:underline">Show PIN Pad</button></div>
+            <div class="bg-gray-800 p-6 rounded-xl shadow-md"><h2 class="text-lg font-semibold text-white">Financial Health</h2><p class="text-5xl font-bold text-center my-4 {% if health_score >= 80 %}text-green-400{% elif health_score >= 50 %}text-yellow-400{% else %}text-red-400{% endif %}">{{ health_score }}<span class="text-2xl text-gray-400">/100</span></p><p class="text-xs text-gray-500 text-center">Based on your Needs vs. Wants spending this month.</p></div>
+            {% for goal in dashboard_goals %}
+        <div class="bg-gray-800 p-6 rounded-xl shadow-md">
+            <h2 class="text-lg font-semibold text-white">Goal: {{ goal.name }}</h2>
+            {% set progress = (goal.current_amount / goal.target_amount * 100)|round|int if goal.target_amount > 0 else 0 %}
+            <div class="w-full bg-gray-700 rounded-full h-4 mt-2">
+                <div class="bg-yellow-400 h-4 rounded-full flex items-center justify-center text-xs font-bold text-black" style="width: {{ progress }}%">{{ progress }}%</div>
+            </div>
+            {% if health_score < 50 %}<p class="text-xs text-red-400 mt-2">Your spending habits are slowing your progress!</p>{% endif %}
+        </div>
+        {% endfor %}
+        </div>
+    </div>
+</div>
+
+<div id="pin-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center hidden z-50">
+    <div class="bg-gray-800 p-8 rounded-xl shadow-2xl w-full max-w-sm">
+        <h2 class="text-2xl font-bold text-white mb-4">Enter PIN</h2><p class="text-gray-400 mb-6">Enter your PIN to view your balance.</p>
+        <form id="pin-form"><input type="password" id="pin-input" inputmode="numeric" pattern="[0-9]*" maxlength="4" class="w-full text-center text-3xl tracking-[1em] bg-gray-700 border-gray-600 rounded-md text-white" required><p id="pin-error" class="text-red-500 text-sm mt-2 hidden">Incorrect PIN.</p><div class="mt-6 flex gap-4"><button type="button" id="cancel-pin-btn" class="w-full py-2 px-4 rounded-md text-sm font-medium text-gray-300 bg-gray-700 hover:bg-gray-600">Cancel</button><button type="submit" class="w-full py-2 px-4 rounded-md text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700">Submit</button></div></form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Charts...
+    const doughnutLabels = {{ doughnut_labels|tojson }};
+    const doughnutData = {{ doughnut_data|tojson }};
+    const doughnutCtx = document.getElementById('expenseChart');
+    if (doughnutCtx && doughnutData && doughnutData.length > 0) { new Chart(doughnutCtx.getContext('2d'), { type: 'doughnut', data: { labels: doughnutLabels, datasets: [{ label: 'Expenses', data: doughnutData, backgroundColor: ['#4F46E5','#10B981','#F59E0B','#EF4444','#6366F1'], borderColor: '#1F2937', borderWidth: 4 }] }, options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { color: '#D1D5DB' } } } } }); }
+    const lineLabels = {{ line_labels|tojson }};
+    const thisMonthData = {{ this_month_data|tojson }};
+    const lastMonthData = {{ last_month_data|tojson }};
+    const lineCtx = document.getElementById('lineChart');
+    if (lineCtx) { new Chart(lineCtx.getContext('2d'), { type: 'line', data: { labels: lineLabels, datasets: [{ label: 'This Month', data: thisMonthData, borderColor: '#6366F1', fill: true }, { label: 'Last Month', data: lastMonthData, borderColor: '#6B7280', fill: true }] }, options: { scales: { y: { beginAtZero: true } } } }); }
+
+    // PIN Modal script
+    const showBalanceBtn = document.getElementById('show-balance-btn');
+    const pinModal = document.getElementById('pin-modal');
+    const cancelPinBtn = document.getElementById('cancel-pin-btn');
+    const pinForm = document.getElementById('pin-form');
+    const pinInput = document.getElementById('pin-input');
+    const pinError = document.getElementById('pin-error');
+    const balanceAmount = document.getElementById('balance-amount');
+
+    if (showBalanceBtn) {
+        showBalanceBtn.addEventListener('click', () => { 
+            pinModal.classList.remove('hidden'); 
+            pinInput.focus(); 
+        });
+    }
+    if (cancelPinBtn) { cancelPinBtn.addEventListener('click', () => { pinModal.classList.add('hidden'); pinInput.value = ''; pinError.classList.add('hidden'); }); }
+    if (pinForm) {
+        pinForm.addEventListener('submit', function (event) {
+            event.preventDefault();
+            const pin = pinInput.value;
+            fetch("{{ url_for('check_pin') }}", { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin: pin }) })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    balanceAmount.textContent = '₹ ' + data.balance;
+                    pinModal.classList.add('hidden');
+                    showBalanceBtn.classList.add('hidden');
+                } else {
+                    pinError.classList.remove('hidden');
+                    pinInput.value = '';
+                    pinInput.focus();
+                }
+            });
+        });
+    }
+});
+</script>
+{% endblock %}
